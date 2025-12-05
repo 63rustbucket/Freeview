@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laura's Voice - Free Text-to-Speech Tool</title>
+<meta name="description" content="Free floating text-to-speech widget for accessibility. Perfect for dyslexia, visual impairments, learning differences, or anyone who prefers listening.">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .stars {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .star {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: white;
+        border-radius: 50%;
+        animation: twinkle 3s infinite;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        max-width: 700px;
+        width: 100%;
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+        color: #1a1a2e;
+        font-size: 36px;
+        margin-bottom: 10px;
+        text-align: center;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .preview-box {
+        background: linear-gradient(135deg, rgba(103, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        border: 3px dashed #667eea;
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+        50% { opacity: 1; transform: scale(1) rotate(180deg); }
+    }
+
+    .sparkle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(45deg, #ffd700, #fff);
+        clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        animation: sparkle 2s infinite;
+    }
+
+    .preview-label {
+        color: #667eea;
+        font-weight: 600;
+        margin-bottom: 20px;
+        font-size: 18px;
+        text-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .demo-widget {
+        background: linear-gradient(180deg, 
+            rgba(102, 126, 234, 0.9) 0%,
+            rgba(118, 75, 162, 0.9) 50%,
+            rgba(255, 107, 107, 0.9) 100%);
+        border: 3px solid rgba(255, 215, 0, 0.5);
+        border-radius: 16px;
+        padding: 20px;
+        display: inline-block;
+        box-shadow: 
+            0 0 30px rgba(102, 126, 234, 0.5),
+            0 0 60px rgba(118, 75, 162, 0.3),
+            inset 0 0 20px rgba(255, 255, 255, 0.1);
+        min-width: 320px;
+        text-align: left;
+        position: relative;
+        animation: glow 3s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+        0%, 100% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.5), 0 0 60px rgba(118, 75, 162, 0.3); }
+        50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8), 0 0 80px rgba(118, 75, 162, 0.5); }
+    }
+
+    .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .widget-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .widget-close {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 50%;
+        background: #ff6b6b;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(255, 107, 107, 0.4);
+    }
+
+    .widget-textarea {
+        width: 100%;
+        height: 100px;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        padding: 12px;
+        font-size: 14px;
+        resize: none;
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .widget-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .control-btn {
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: not-allowed;
+        opacity: 0.8;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-play { background: linear-gradient(135deg, #00d2ff, #3a7bd5); }
+    .btn-stop { background: linear-gradient(135deg, #ff6b6b, #c92a2a); }
+    .btn-pause { background: linear-gradient(135deg, #ffd93d, #f9ca24); color: #333; }
+    .btn-clear { background: linear-gradient(135deg, #a8e6cf, #56ab91); }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 25px 0;
+    }
+
+    .feature {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .feature-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+
+    .feature h4 {
+        color: #667eea;
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+
+    .feature p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .instructions {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 20px;
+        border-radius: 0 12px 12px 0;
+        margin-bottom: 25px;
+    }
+
+    .instructions h3 {
+        color: #667eea;
+        margin-bottom: 12px;
+        font-size: 20px;
+    }
+
+    .instructions ol {
+        margin-left: 20px;
+        color: #555;
+        font-size: 15px;
+        line-height: 1.8;
+    }
+
+    .bookmarklet-box {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 25px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .bookmarklet-box h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 20px;
+    }
+
+    a.bookmarklet {
+        display: inline-block;
+        padding: 20px 45px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        font-weight: bold;
+        font-size: 22px;
+        text-decoration: none;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        cursor: move;
+        transition: all 0.3s ease;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    a.bookmarklet:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.7);
+    }
+
+    .note {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 14px;
+        margin: 20px 0;
+    }
+
+    .footer {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 30px 20px;
+        font-size: 14px;
+        line-height: 1.8;
+        max-width: 700px;
+    }
+
+    .footer p {
+        margin: 8px 0;
+    }
+
+    .footer strong {
+        color: white;
+    }
+</style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <h1>🌸 Laura's Voice 💜</h1>
+        <p class="subtitle">A free text-to-speech widget that works on any website.<br>Perfect for accessibility, learning differences, or anyone who prefers listening.</p>
+        
+        <div class="preview-box">
+            <div class="sparkle" style="top: 10%; left: 15%; animation-delay: 0s;"></div>
+            <div class="sparkle" style="top: 20%; right: 20%; animation-delay: 0.5s;"></div>
+            <div class="sparkle" style="bottom: 15%; left: 25%; animation-delay: 1s;"></div>
+            <div class="sparkle" style="bottom: 25%; right: 15%; animation-delay: 1.5s;"></div>
+            
+            <div class="preview-label">✨ Here's What You'll Get:</div>
+            <div class="demo-widget">
+                <div class="widget-header">
+                    <span class="widget-title">🌸 Laura's Voice 💜</span>
+                    <button class="widget-close">×</button>
+                </div>
+                <textarea class="widget-textarea" placeholder="Type or paste text here..." disabled></textarea>
+                <div class="widget-controls">
+                    <button class="control-btn btn-play">▶️ PLAY</button>
+                    <button class="control-btn btn-stop">⏹️ STOP</button>
+                    <button class="control-btn btn-pause">⏸️ PAUSE</button>
+                    <button class="control-btn btn-clear">🗑️ CLEAR</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">♿</div>
+                <h4>Accessibility First</h4>
+                <p>Helps with dyslexia, visual impairments, ADHD, or reading difficulties</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📚</div>
+                <h4>Better Learning</h4>
+                <p>Perfect for students who learn better by listening</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🌍</div>
+                <h4>Works Everywhere</h4>
+                <p>Use on any website - news, social media, homework, games</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🆓</div>
+                <h4>100% Free</h4>
+                <p>No account, no tracking, no cost. Ever.</p>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 How to Install (3 Easy Steps)</h3>
+            <ol>
+                <li><strong>Show your bookmarks bar:</strong> Press <kbd>Ctrl+Shift+B</kbd> (Windows) or <kbd>Cmd+Shift+B</kbd> (Mac)</li>
+                <li><strong>Drag the button below</strong> up to your bookmarks bar (click, hold, and drag!)</li>
+                <li><strong>Use it anywhere:</strong> Go to any website and click your bookmark to launch the widget!</li>
+            </ol>
+        </div>
+
+        <div class="bookmarklet-box">
+            <h3>🌟 Drag This to Your Bookmarks Bar</h3>
+            
+            <a class="bookmarklet" 
+               href="javascript:(function()%7Bif(document.getElementById('lauras-voice'))return;const%20w=document.createElement('div');w.id='lauras-voice';w.style.cssText='position:fixed;top:50%25;left:50%25;transform:translate(-50%25,-50%25);width:320px;max-height:80vh;background:linear-gradient(180deg,rgba(102,126,234,0.95)%200%25,rgba(118,75,162,0.95)%2050%25,rgba(255,107,107,0.95)%20100%25);border:3px%20solid%20rgba(255,215,0,0.6);border-radius:16px;padding:15px;box-shadow:0%200%2040px%20rgba(102,126,234,0.6);z-index:999999;font-family:Arial,sans-serif';const%20style=document.createElement('style');style.textContent='%40keyframes%20glow%7B0%25,100%25%7Bbox-shadow:0%200%2040px%20rgba(102,126,234,0.6)%7D50%25%7Bbox-shadow:0%200%2060px%20rgba(102,126,234,0.9)%7D%7D';document.head.appendChild(style);w.innerHTML=%22%3Cdiv%20style='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px%20solid%20rgba(255,255,255,0.3);cursor:move'%20id='header'%3E%3Cspan%20style='font-size:16px;font-weight:700;color:white'%3E%F0%9F%8C%B8%20Laura's%20Voice%20%F0%9F%92%9C%3C/span%3E%3Cbutton%20id='close'%20style='width:28px;height:28px;border:none;border-radius:50%25;background:%23ff6b6b;color:white;font-size:18px;font-weight:bold;cursor:pointer'%3E%C3%97%3C/button%3E%3C/div%3E%3Ctextarea%20id='txt'%20placeholder='Type%20or%20paste%20text%20here...'%20style='width:100%25;height:90px;border:2px%20solid%20rgba(255,255,255,0.5);border-radius:10px;padding:10px;font-size:13px;resize:vertical;margin-bottom:8px;background:rgba(255,255,255,0.95);overflow-y:scroll;box-sizing:border-box'%3E%3C/textarea%3E%3Cdiv%20style='display:grid;grid-template-columns:1fr%201fr;gap:8px;margin-bottom:10px'%3E%3Cbutton%20id='play'%20style='padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,%2300d2ff,%233a7bd5);color:white;font-size:14px;font-weight:600;cursor:pointer'%3EPLAY%3C/button%3E%3Cbutton%20id='stop'%20style='padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,%23ff6b6b,%23c92a2a);color:white;font-size:14px;font-weight:600;cursor:pointer'%3ESTOP%3C/button%3E%3Cbutton%20id='pause'%20style='padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,%23ffd93d,%23f9ca24);color:%23333;font-size:14px;font-weight:600;cursor:pointer'%3EPAUSE%3C/button%3E%3Cbutton%20id='clear'%20style='padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,%23a8e6cf,%2356ab91);color:white;font-size:14px;font-weight:600;cursor:pointer'%3ECLEAR%3C/button%3E%3C/div%3E%3Cselect%20id='voice'%20style='width:100%25;padding:8px;border:2px%20solid%20rgba(255,255,255,0.5);border-radius:8px;font-size:12px;background:rgba(255,255,255,0.95)'%3E%3C/select%3E%22;document.body.appendChild(w);let%20d=false,mx,my,ix,iy,ox=0,oy=0;const%20header=document.getElementById('header');const%20start=e=%3E%7Bconst%20ev=e.touches%3Fe.touches%5B0%5D:e;ix=ev.clientX-ox;iy=ev.clientY-oy;d=true%7D;const%20end=()=%3E%7Bix=mx;iy=my;d=false%7D;const%20move=e=%3E%7Bif(!d)return;e.preventDefault();const%20ev=e.touches%3Fe.touches%5B0%5D:e;mx=ev.clientX-ix;my=ev.clientY-iy;ox=mx;oy=my;w.style.transform=%60translate(calc(-50%25%20+%20$%7Bmx%7Dpx),calc(-50%25%20+%20$%7Bmy%7Dpx))%60%7D;header.addEventListener('mousedown',start);document.addEventListener('mouseup',end);document.addEventListener('mousemove',move);const%20synth=window.speechSynthesis;const%20txt=document.getElementById('txt');const%20play=document.getElementById('play');const%20stop=document.getElementById('stop');const%20pause=document.getElementById('pause');const%20clear=document.getElementById('clear');const%20voice=document.getElementById('voice');const%20close=document.getElementById('close');let%20paused=false;let%20currentUtterance=null;const%20loadV=()=%3E%7Bconst%20voices=synth.getVoices();voice.innerHTML='';voices.forEach((v,i)=%3E%7Bconst%20opt=document.createElement('option');opt.value=i;opt.textContent=%60$%7Bv.name%7D%20($%7Bv.lang%7D)%60;voice.appendChild(opt)%7D)%7D;loadV();if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadV;const%20doPlay=()=%3E%7Bif(paused)%7Bsynth.resume();paused=false;return%7Dconst%20text=txt.value.trim();if(!text)return;synth.cancel();currentUtterance=new%20SpeechSynthesisUtterance(text);const%20voices=synth.getVoices();if(voices%5Bvoice.value%5D)currentUtterance.voice=voices%5Bvoice.value%5D;currentUtterance.rate=0.9;currentUtterance.pitch=1;synth.speak(currentUtterance)%7D;const%20doStop=()=%3E%7Bsynth.cancel();paused=false;currentUtterance=null%7D;const%20doPause=()=%3E%7Bif(synth.speaking%26%26!synth.paused)%7Bsynth.pause();paused=true%7D%7D;play.addEventListener('click',doPlay);stop.addEventListener('click',doStop);pause.addEventListener('click',doPause);txt.addEventListener('keydown',e=%3E%7Bif(e.key==='Enter'%26%26!e.shiftKey)%7Be.preventDefault();doPlay()%7D%7D);clear.addEventListener('click',()=%3E%7Btxt.value='';doStop()%7D);close.addEventListener('click',()=%3E%7BdoStop();w.remove()%7D)%7D)();">
+                🌸 Laura's Voice 💜
+            </a>
+        </div>
+
+        <div class="note">
+            <strong>✨ Features:</strong> Buffer-controlled (won't auto-read pages), draggable, pause/resume support, voice selection, scrollable text area, and a beautiful glowing design.
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Created with love for Laura</strong></p>
+        <p>Built with help from Claude AI</p>
+        <p>Free for anyone who needs it • Share freely 💜</p>
+        <p>Made to help people who learn better by listening</p>
+    </div>
+
+    <script>
+        // Generate random stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>
