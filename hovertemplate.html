@@ -36,24 +36,21 @@
       position: relative; /* Ensure zones are above video */
     }
     .zone-1, .zone-2, .zone-3, .zone-4 {
-      background-color: rgba(248, 250, 252, 0.8); /* Semi-transparent background */
-      color: #1e293b;
-      border: 2px solid #e2e8f0;
+      background-color: transparent; /* Transparent background */
+      border: 2px solid rgba(226, 232, 240, 0.5); /* Light border for visibility */
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
-      font-weight: 600;
       cursor: pointer;
       border-radius: 10px;
       position: relative;
       outline: none;
     }
-    .zone-1:hover, .zone-1:focus { background-color: rgba(224, 231, 255, 0.8); color: #4338ca; border-color: #818cf8; transform: scale(1.02); }
-    .zone-2:hover, .zone-2:focus { background-color: rgba(252, 231, 243, 0.8); color: #be185d; border-color: #f472b6; transform: scale(1.02); }
-    .zone-3:hover, .zone-3:focus { background-color: rgba(209, 250, 229, 0.8); color: #047857; border-color: #34d399; transform: scale(1.02); }
-    .zone-4:hover, .zone-4:focus { background-color: rgba(254, 243, 199, 0.8); color: #b45309; border-color: #fbbf24; transform: scale(1.02); }
+    .zone-1:hover, .zone-1:focus { border-color: #818cf8; transform: scale(1.02); }
+    .zone-2:hover, .zone-2:focus { border-color: #f472b6; transform: scale(1.02); }
+    .zone-3:hover, .zone-3:focus { border-color: #34d399; transform: scale(1.02); }
+    .zone-4:hover, .zone-4:focus { border-color: #fbbf24; transform: scale(1.02); }
     .preview {
       display: none;
       position: absolute;
@@ -146,15 +143,6 @@
     .setting-row button:focus {
       background: #6366f1;
     }
-    .zone-logo {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 50%; /* Adjust size as needed */
-      height: auto;
-      pointer-events: none; /* Prevent interference with hover */
-    }
   </style>
 </head>
 <body>
@@ -188,11 +176,6 @@
       <input type="text" id="media-input" placeholder="e.g., https://streaming.broadcastradio.com:11340/gtradio" aria-label="Enter media URL or text">
     </div>
     <div class="setting-row">
-      <label for="logo-input">Upload Logo</label>
-      <input type="file" id="logo-input" accept="image/*" aria-label="Upload logo image">
-      <button onclick="changeLogo()" aria-label="Apply logo">Apply Logo</button>
-    </div>
-    <div class="setting-row">
       <label for="background-input">Upload Background Video</label>
       <input type="file" id="background-input" accept="video/*" aria-label="Upload background video">
       <button onclick="changeBackground()" aria-label="Apply background video">Apply Background</button>
@@ -207,19 +190,15 @@
   </div>
   <div class="container">
     <div class="zone-1" tabindex="0" role="button" aria-label="Top Left Section" data-action="media-play" data-media="https://streaming.broadcastradio.com:11340/gtradio">
-      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
       <div class="preview" aria-live="polite" aria-label="Playing media: https://streaming.broadcastradio.com:11340/gtradio"><p>Playing music: <a href="https://streaming.broadcastradio.com:11340/gtradio" target="_blank">https://streaming.broadcastradio.com:11340/gtradio</a></p></div>
     </div>
     <div class="zone-2" tabindex="0" role="button" aria-label="Top Right Section" data-action="" data-media="">
-      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
       <div class="preview" aria-live="polite">Preview: This is the Top Right section content.</div>
     </div>
     <div class="zone-3" tabindex="0" role="button" aria-label="Bottom Left Section" data-action="" data-media="">
-      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
       <div class="preview" aria-live="polite">Preview: This is the Bottom Left section content.</div>
     </div>
     <div class="zone-4" tabindex="0" role="button" aria-label="Bottom Right Section" data-action="" data-media="">
-      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
       <div class="preview" aria-live="polite">Preview: This is the Bottom Right section content.</div>
     </div>
   </div>
@@ -262,7 +241,12 @@
         previewElement.innerHTML = `<p>Playing music: <a href="${media}" target="_blank">${media}</a></p>`;
         previewElement.setAttribute('aria-label', `Playing music: ${media}`);
         if (alwaysPlay) {
-          window.open(media, '_blank');
+          const radioWindow = window.open(media, 'GrokRadio', 'width=300,height=200');
+          if (radioWindow) {
+            radioWindow.focus();
+          } else {
+            alert('Please allow pop-ups to open the radio in a new window.');
+          }
         } else {
           zoneElement.onmouseenter = () => {
             player.src = media;
@@ -308,13 +292,16 @@
             previewElement.innerHTML = `<p>Playing music: <a href="${media}" target="_blank">${media}</a></p>`;
             previewElement.setAttribute('aria-label', `Playing music: ${media}`);
             if (alwaysPlay) {
-              window.open(media, '_blank');
+              const radioWindow = window.open(media, 'GrokRadio', 'width=300,height=200');
+              if (radioWindow) {
+                radioWindow.focus();
+              }
             } else {
               zone.onmouseenter = () => {
                 player.src = media;
                 player.play().catch(e => console.log('Playback error:', e));
               };
-              zone.onmouseleave = () => {
+              zoneElement.onmouseleave = () => {
                 if (!alwaysPlay) {
                   player.pause();
                   player.currentTime = 0;
@@ -346,24 +333,6 @@
       a.click();
       URL.revokeObjectURL(url);
       alert('Webpage saved successfully! Please apply any effects before saving next time to retain them.');
-    }
-
-    function changeLogo() {
-      const fileInput = document.getElementById('logo-input');
-      const file = fileInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const zones = document.querySelectorAll('.zone-1, .zone-2, .zone-3, .zone-4');
-          zones.forEach(zone => {
-            zone.querySelector('.zone-logo').src = e.target.result;
-          });
-          alert('Logo updated! Save the file to retain changes.');
-        };
-        reader.readAsDataURL(file);
-      } else {
-        alert('Please select an image file.');
-      }
     }
 
     function changeBackground() {
