@@ -1,0 +1,386 @@
+<DOCUMENT filename="accessible-hover-app (5).html">
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessible Hover Design App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden; /* Prevent scrolling */
+    }
+    video.background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1; /* Behind other content */
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      height: calc(100vh - 100px);
+      margin-top: 60px;
+      position: relative; /* Ensure zones are above video */
+    }
+    .zone-1, .zone-2, .zone-3, .zone-4 {
+      background-color: rgba(248, 250, 252, 0.8); /* Semi-transparent background */
+      color: #1e293b;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 10px;
+      position: relative;
+      outline: none;
+    }
+    .zone-1:hover, .zone-1:focus { background-color: rgba(224, 231, 255, 0.8); color: #4338ca; border-color: #818cf8; transform: scale(1.02); }
+    .zone-2:hover, .zone-2:focus { background-color: rgba(252, 231, 243, 0.8); color: #be185d; border-color: #f472b6; transform: scale(1.02); }
+    .zone-3:hover, .zone-3:focus { background-color: rgba(209, 250, 229, 0.8); color: #047857; border-color: #34d399; transform: scale(1.02); }
+    .zone-4:hover, .zone-4:focus { background-color: rgba(254, 243, 199, 0.8); color: #b45309; border-color: #fbbf24; transform: scale(1.02); }
+    .preview {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      color: #000000;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      width: 300px;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border: 1px solid #e2e8f0;
+    }
+    .zone-1:hover .preview, .zone-1:focus .preview,
+    .zone-2:hover .preview, .zone-2:focus .preview,
+    .zone-3:hover .preview, .zone-3:focus .preview,
+    .zone-4:hover .preview, .zone-4:focus .preview {
+      display: block;
+    }
+    .settings-toggle, .save-button {
+      position: fixed;
+      top: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      transition: transform 0.2s;
+    }
+    .settings-toggle { right: 80px; }
+    .save-button { right: 10px; }
+    .settings-toggle:hover, .settings-toggle:focus,
+    .save-button:hover, .save-button:focus {
+      transform: scale(1.05);
+    }
+    .settings-panel {
+      position: fixed;
+      top: 60px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.98);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      min-width: 300px;
+    }
+    .settings-panel.open { display: block; }
+    .settings-panel h3 {
+      margin-bottom: 16px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #475569;
+    }
+    .setting-row { margin-bottom: 16px; }
+    .setting-row label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .setting-row select,
+    .setting-row input[type="text"],
+    .setting-row input[type="file"] {
+      width: 100%;
+      height: 40px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 14px;
+    }
+    .setting-row button {
+      width: 100%;
+      padding: 10px;
+      background: #818cf8;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .setting-row button:hover,
+    .setting-row button:focus {
+      background: #6366f1;
+    }
+    .zone-logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50%; /* Adjust size as needed */
+      height: auto;
+      pointer-events: none; /* Prevent interference with hover */
+    }
+  </style>
+</head>
+<body>
+  <video class="background" autoplay loop muted>
+    <source src="https://github.com/63rustbucket/Freeview/raw/main/homepage.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <button class="settings-toggle" onclick="toggleSettings()" tabindex="0" aria-label="Open settings panel">⚙️ Design Hover</button>
+  <button class="save-button" onclick="saveFile()" tabindex="0" aria-label="Save webpage">💾 Save</button>
+  <div class="settings-panel open" id="settings-panel">
+    <h3>Design Mouseover Effect</h3>
+    <div class="setting-row">
+      <label for="zone-select">Select Quadrant</label>
+      <select id="zone-select" aria-label="Choose a quadrant">
+        <option value="zone-1">Top Left</option>
+        <option value="zone-2">Top Right</option>
+        <option value="zone-3">Bottom Left</option>
+        <option value="zone-4">Bottom Right</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label for="action-select">Select Action</label>
+      <select id="action-select" aria-label="Choose a mouseover action">
+        <option value="tooltip">Tooltip (Text)</option>
+        <option value="link-preview">Link/Page Preview</option>
+        <option value="media-play">Play Media (e.g., Radio)</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label for="media-input">Input Media or Link</label>
+      <input type="text" id="media-input" placeholder="e.g., https://streaming.broadcastradio.com:11340/gtradio" aria-label="Enter media URL or text">
+    </div>
+    <div class="setting-row">
+      <label for="logo-input">Upload Logo</label>
+      <input type="file" id="logo-input" accept="image/*" aria-label="Upload logo image">
+      <button onclick="changeLogo()" aria-label="Apply logo">Apply Logo</button>
+    </div>
+    <div class="setting-row">
+      <label for="background-input">Upload Background Video</label>
+      <input type="file" id="background-input" accept="video/*" aria-label="Upload background video">
+      <button onclick="changeBackground()" aria-label="Apply background video">Apply Background</button>
+    </div>
+    <div class="setting-row">
+      <label for="always-play">Open Radio in New Window</label>
+      <input type="checkbox" id="always-play" aria-label="Enable radio in new window">
+    </div>
+    <div class="setting-row">
+      <button onclick="applyHoverEffect()" aria-label="Apply mouseover effect">Apply Effect</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="zone-1" tabindex="0" role="button" aria-label="Top Left Section" data-action="media-play" data-media="https://streaming.broadcastradio.com:11340/gtradio">
+      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
+      <div class="preview" aria-live="polite" aria-label="Playing media: https://streaming.broadcastradio.com:11340/gtradio"><p>Playing music: <a href="https://streaming.broadcastradio.com:11340/gtradio" target="_blank">https://streaming.broadcastradio.com:11340/gtradio</a></p></div>
+    </div>
+    <div class="zone-2" tabindex="0" role="button" aria-label="Top Right Section" data-action="" data-media="">
+      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
+      <div class="preview" aria-live="polite">Preview: This is the Top Right section content.</div>
+    </div>
+    <div class="zone-3" tabindex="0" role="button" aria-label="Bottom Left Section" data-action="" data-media="">
+      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
+      <div class="preview" aria-live="polite">Preview: This is the Bottom Left section content.</div>
+    </div>
+    <div class="zone-4" tabindex="0" role="button" aria-label="Bottom Right Section" data-action="" data-media="">
+      <img src="logo.png" alt="Freeview Logo" class="zone-logo" onerror="this.src='https://via.placeholder.com/100?text=Upload+Logo';">
+      <div class="preview" aria-live="polite">Preview: This is the Bottom Right section content.</div>
+    </div>
+  </div>
+  <audio id="media-player" style="display: none;" src="https://streaming.broadcastradio.com:11340/gtradio"></audio>
+  <script>
+    function toggleSettings() {
+      document.getElementById('settings-panel').classList.toggle('open');
+    }
+
+    function applyHoverEffect() {
+      const zone = document.getElementById('zone-select').value;
+      const action = document.getElementById('action-select').value;
+      const media = document.getElementById('media-input').value.trim();
+      const alwaysPlay = document.getElementById('always-play').checked;
+      const zoneElement = document.querySelector(`.${zone}`);
+      const previewElement = zoneElement.querySelector('.preview');
+
+      if (!media && action !== 'tooltip') {
+        alert('Please enter media or text.');
+        return;
+      }
+
+      // Store settings in data attributes
+      zoneElement.setAttribute('data-action', action);
+      zoneElement.setAttribute('data-media', media);
+      zoneElement.setAttribute('data-always-play', alwaysPlay);
+
+      // Reset preview content and events
+      previewElement.innerHTML = '';
+      zoneElement.onmouseenter = zoneElement.onmouseleave = zoneElement.onfocus = zoneElement.onblur = null;
+
+      if (action === 'tooltip') {
+        previewElement.innerHTML = `<p>${media || 'No text'}</p>`;
+        previewElement.setAttribute('aria-label', `Tooltip: ${media || 'No text'}`);
+      } else if (action === 'link-preview') {
+        previewElement.innerHTML = `<p>Preview: ${media}</p>`;
+        previewElement.setAttribute('aria-label', `Link Preview: ${media}`);
+      } else if (action === 'media-play') {
+        const player = document.getElementById('media-player');
+        previewElement.innerHTML = `<p>Playing music: <a href="${media}" target="_blank">${media}</a></p>`;
+        previewElement.setAttribute('aria-label', `Playing music: ${media}`);
+        if (alwaysPlay) {
+          window.open(media, '_blank');
+        } else {
+          zoneElement.onmouseenter = () => {
+            player.src = media;
+            player.play().catch(e => console.log('Playback error:', e));
+          };
+          zoneElement.onmouseleave = () => {
+            if (!alwaysPlay) {
+              player.pause();
+              player.currentTime = 0;
+            }
+          };
+          zoneElement.onfocus = () => {
+            player.src = media;
+            player.play().catch(e => console.log('Playback error:', e));
+          };
+          zoneElement.onblur = () => {
+            if (!alwaysPlay) {
+              player.pause();
+              player.currentTime = 0;
+            }
+          };
+        }
+      }
+    }
+
+    // Reapply saved effects on page load
+    window.onload = function() {
+      document.querySelectorAll('.zone-1, .zone-2, .zone-3, .zone-4').forEach(zone => {
+        const action = zone.getAttribute('data-action');
+        const media = zone.getAttribute('data-media');
+        const alwaysPlay = zone.getAttribute('data-always-play') === 'true';
+        if (action && media) {
+          const previewElement = zone.querySelector('.preview');
+          const player = document.getElementById('media-player');
+          previewElement.innerHTML = '';
+          if (action === 'tooltip') {
+            previewElement.innerHTML = `<p>${media}</p>`;
+            previewElement.setAttribute('aria-label', `Tooltip: ${media}`);
+          } else if (action === 'link-preview') {
+            previewElement.innerHTML = `<p>Preview: ${media}</p>`;
+            previewElement.setAttribute('aria-label', `Link Preview: ${media}`);
+          } else if (action === 'media-play') {
+            previewElement.innerHTML = `<p>Playing music: <a href="${media}" target="_blank">${media}</a></p>`;
+            previewElement.setAttribute('aria-label', `Playing music: ${media}`);
+            if (alwaysPlay) {
+              window.open(media, '_blank');
+            } else {
+              zone.onmouseenter = () => {
+                player.src = media;
+                player.play().catch(e => console.log('Playback error:', e));
+              };
+              zone.onmouseleave = () => {
+                if (!alwaysPlay) {
+                  player.pause();
+                  player.currentTime = 0;
+                }
+              };
+              zone.onfocus = () => {
+                player.src = media;
+                player.play().catch(e => console.log('Playback error:', e));
+              };
+              zone.onblur = () => {
+                if (!alwaysPlay) {
+                  player.pause();
+                  player.currentTime = 0;
+                }
+              };
+            }
+          }
+        }
+      });
+    };
+
+    function saveFile() {
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'accessible-hover-app.html';
+      a.click();
+      URL.revokeObjectURL(url);
+      alert('Webpage saved successfully! Please apply any effects before saving next time to retain them.');
+    }
+
+    function changeLogo() {
+      const fileInput = document.getElementById('logo-input');
+      const file = fileInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const zones = document.querySelectorAll('.zone-1, .zone-2, .zone-3, .zone-4');
+          zones.forEach(zone => {
+            zone.querySelector('.zone-logo').src = e.target.result;
+          });
+          alert('Logo updated! Save the file to retain changes.');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select an image file.');
+      }
+    }
+
+    function changeBackground() {
+      const fileInput = document.getElementById('background-input');
+      const file = fileInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const video = document.querySelector('.background');
+          video.src = e.target.result;
+          alert('Background video updated! Save the file to retain changes.');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select a video file.');
+      }
+    }
+  </script>
+</body></html>
+</DOCUMENT>
