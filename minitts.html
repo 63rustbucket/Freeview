@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auto-Reader v3 (Visual Controls)</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+        .btn { background: #007bff; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 20px; cursor: move; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎤 Auto-Reader v3</h1>
+        <p>This version adds a floating control bar so you don't have to keep clicking your bookmarks!</p>
+        
+        <a class="btn" href="javascript:(function(){
+            if(document.getElementById('tts-control-bar')) return;
+
+            /* 1. Create the UI Container */
+            const container = document.createElement('div');
+            container.id = 'tts-control-bar';
+            container.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:999999; background:#1e1e1e; color:white; padding:10px 20px; border-radius:50px; display:flex; gap:15px; align-items:center; box-shadow:0 8px 32px rgba(0,0,0,0.4); font-family:sans-serif; border:1px solid #444;';
+
+            /* 2. Logic Variables */
+            let reading = true;
+            let spoken = new WeakSet();
+            let synth = window.speechSynthesis;
+
+            /* 3. Helper: Speak Function */
+            const speak = (text) => {
+                if (!reading || !text) return;
+                synth.cancel();
+                const ut = new SpeechSynthesisUtterance(text);
+                synth.speak(ut);
+            };
+
+            /* 4. UI Elements */
+            container.innerHTML = `<span style='font-size:12px; color:#aaa;'>🎤 AUTO-READER</span>
+                                   <button id='tts-stop-go' style='background:#ff4757; color:white; border:none; border-radius:20px; padding:5px 15px; cursor:pointer; font-weight:bold;'>Stop</button>
+                                   <button id='tts-kill' style='background:transparent; color:#888; border:none; cursor:pointer; font-size:18px;'>&times;</button>`;
+            
+            document.body.appendChild(container);
+
+            const toggleBtn = document.getElementById('tts-stop-go');
+            const killBtn = document.getElementById('tts-kill');
+
+            /* 5. Button Actions */
+            toggleBtn.onclick = () => {
+                reading = !reading;
+                if(reading) {
+                    toggleBtn.innerText = 'Stop';
+                    toggleBtn.style.background = '#ff4757';
+                } else {
+                    toggleBtn.innerText = 'Resume';
+                    toggleBtn.style.background = '#2ed573';
+                    synth.cancel();
+                }
+            };
+
+            killBtn.onclick = () => {
+                reading = false;
+                synth.cancel();
+                container.remove();
+                observer.disconnect();
+            };
+
+            /* 6. Initial Reading */
+            const initialText = document.querySelector('main')?.innerText || document.body.innerText;
+            speak(initialText);
+
+            /* 7. Live Observer */
+            const observer = new MutationObserver(mutations => {
+                if (!reading) return;
+                mutations.forEach(m => {
+                    m.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && !spoken.has(node)) {
+                            const t = node.innerText?.trim();
+                            if (t && t.length > 30) {
+                                spoken.add(node);
+                                speak(t);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, {childList:true, subtree:true});
+        })();">Drag to Bookmarks</a>
+        <p style="font-size: 12px; color: #666; margin-top: 20px;">Drag the blue button to your bookmarks bar, then click it on any page.</p>
+    </div>
+</body>
+</html>
